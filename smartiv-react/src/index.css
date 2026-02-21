@@ -1,0 +1,214 @@
+/* SmartIV ICU — index.css (React entry)
+   Full light medical theme inherited from styles.css */
+@import './styles.css';
+
+/* ── React-specific layout adjustments ─────────────────────── */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Layout container for sidebar + main */
+.layout {
+  display: flex;
+  margin-top: var(--header-h);
+  flex: 1;
+  min-height: 0;
+}
+
+/* Main content area — ensure it fills space */
+.main-area {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Content column for monitor view */
+.content-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+}
+
+/* Modal box generic */
+.modal-box {
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalIn .25s cubic-bezier(.4, 0, .2, 1);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--primary-pale);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  flex-shrink: 0;
+}
+
+.modal-body {
+  overflow-y: auto;
+}
+
+/* ── Flow bar (patient modal) ─────────────────────────────── */
+.flow-bar-bg {
+  position: relative;
+  height: 10px;
+  background: var(--border-light);
+  border-radius: 99px;
+  overflow: visible;
+}
+
+.flow-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .5s;
+}
+
+.target-line {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  background: rgba(229, 57, 53, .8);
+  border-radius: 2px;
+}
+
+/* ── Sensor badge (patient modal) ─────────────────────────── */
+.sb-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: 12px;
+}
+
+/* ── Gauge (patient modal) ────────────────────────────────── */
+.gauge-ring {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .5s;
+}
+
+.gauge-inner {
+  width: 76px;
+  height: 76px;
+  background: var(--bg-page);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.gauge-pct {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.gauge-ml {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ── Critical banner blink ────────────────────────────────── */
+.crit-blink {
+  animation: pulseRing 1s ease-in-out infinite alternate;
+  display: inline-block;
+}
+
+/* ── Device health error highlight ─────────────────────────── */
+.dh-item.dh-error {
+  border-color: var(--critical-border) !important;
+  background: var(--critical-bg) !important;
+}
+
+/* alert-list panel body padding */
+#alertCenter .panel-body,
+#alertCenter>.alert-list {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  max-height: 380px;
+}
+
+/* ── PM labels in modal ─────────────────────────────────────── */
+.pm-bed {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.pm-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+/* Make alert-list scroll inside device health right col */
+.right-col .panel {
+  max-height: 440px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .content-row {
+    grid-template-columns: 200px 1fr 240px;
+  }
+}
+
+@media (max-width: 960px) {
+  .content-row {
+    grid-template-columns: 1fr;
+  }
+
+  .left-col,
+  .right-col {
+    display: none;
+  }
+
+  .stat-row {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .tz3 .qa-btn span:not(:first-child) {
+    display: none;
+  }
+
+  .content-col {
+    padding: 12px;
+  }
+
+  .main-area {
+    padding: 0;
+  }
+}

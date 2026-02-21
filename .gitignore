@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+smartiv-react/node_modules/
+Banglore/node_modules/
+
+# Build output
+smartiv-react/dist/
+smartiv-react/.vite/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Python server
+*.pid
