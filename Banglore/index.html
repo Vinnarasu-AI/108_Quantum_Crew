@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartIV ICU — IoT IV Monitoring Dashboard</title>
+  <meta name="description"
+    content="Hospital-grade ICU IV drip monitoring system. Real-time ESP32 + Firebase. Priority alerts, multi-patient grid, alarm escalation. Light medical theme." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════
+       TOP HEADER BAR
+  ══════════════════════════════════════════════════════════ -->
+  <header class="topbar" role="banner">
+
+    <!-- ZONE 1: Logo + Stats -->
+    <div class="tz1">
+      <div class="logo-block">
+        <div class="logo-icon-wrap">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+              stroke="#fff" stroke-width="2" stroke-linecap="round" />
+            <circle cx="12" cy="12" r="3" fill="#fff" />
+          </svg>
+        </div>
+        <div>
+          <div class="logo-name">SmartIV <span class="logo-icu">ICU</span></div>
+          <div class="logo-ver">v3.0 · IoT Monitor</div>
+        </div>
+      </div>
+
+      <div class="stat-row" role="region" aria-label="Patient Statistics">
+        <div class="stat-chip total" title="Total Devices">
+          <span class="sc-num" id="statTotal">0</span>
+          <span class="sc-lbl">Total</span>
+        </div>
+        <div class="stat-chip crit" title="Critical Alerts">
+          <span class="sc-bg-dot"></span>
+          <span class="sc-num" id="statCritical">0</span>
+          <span class="sc-lbl">Critical</span>
+        </div>
+        <div class="stat-chip warn" title="Warnings">
+          <span class="sc-num" id="statWarning">0</span>
+          <span class="sc-lbl">Warning</span>
+        </div>
+        <div class="stat-chip ok" title="Normal">
+          <span class="sc-num" id="statNormal">0</span>
+          <span class="sc-lbl">Normal</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ZONE 2: System Status Center -->
+    <div class="tz2" role="status" aria-label="System Status">
+      <div class="sys-indicator">
+        <span class="pulse-dot green" id="sysStatusDot"></span>
+        <span id="sysStatusText">System Online</span>
+      </div>
+      <div class="tz2-divider"></div>
+      <div class="hosp-name">City General Hospital · ICU Ward B</div>
+      <div class="tz2-divider"></div>
+      <div class="shift-tag" id="shiftTag">🌙 Night Shift · Nurse: S. Mehta</div>
+      <div class="tz2-divider"></div>
+      <div class="live-clock" id="liveClock" aria-label="Current Time">--:--:--</div>
+      <div class="tz2-divider"></div>
+      <div class="fb-pill" id="fbPill" title="Firebase Connection Status">
+        <span class="fb-dot" id="fbDot"></span>
+        <span id="fbLabel">Connecting…</span>
+      </div>
+    </div>
+
+    <!-- ZONE 3: Quick Actions -->
+    <div class="tz3" role="toolbar" aria-label="Quick Actions">
+      <div class="search-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8FA3B2" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input type="text" id="searchInput" placeholder="Search patient…" oninput="filterCards()"
+          aria-label="Search patients" autocomplete="off" />
+      </div>
+
+      <button class="qa-btn" id="btn-add-device" onclick="openAddDevice()" title="Register new IV device">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Add Device
+      </button>
+
+      <button class="qa-btn" id="btn-refresh" onclick="forceRefresh()" title="Refresh data">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10" />
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+        </svg>
+        Refresh
+      </button>
+
+      <button class="qa-btn qa-alarm" id="btn-test-alarm" onclick="testAlarm()" title="Test alarm system">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+          <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+        Test
+      </button>
+
+      <div class="alert-wrap">
+        <button class="icon-btn" id="btn-alerts" onclick="scrollToAlerts()" title="View alerts"
+          aria-label="Alert Center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+        </button>
+        <span class="alert-badge" id="alertBadge" style="display:none" aria-label="Alert count">0</span>
+      </div>
+
+      <button class="icon-btn" id="soundBtn" onclick="toggleSound()" title="Toggle sound">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- CRITICAL FLASH BANNER -->
+  <div class="crit-banner" id="critBanner" role="alert" style="display:none">
+    <span>🚨</span>
+    <span id="critBannerMsg">CRITICAL ALERT</span>
+    <button onclick="document.getElementById('critBanner').style.display='none'" aria-label="Dismiss banner">✕</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MAIN APPLICATION BODY
+  ══════════════════════════════════════════════════════════ -->
+  <div class="app-body">
+
+    <!-- =================== SIDEBAR =================== -->
+    <nav class="sidebar" id="sidebar" aria-label="Main Navigation">
+      <button class="sidebar-toggle" id="btn-sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar"
+        aria-label="Toggle sidebar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+
+      <!-- CRITICAL MONITORING -->
+      <div class="nav-group active" id="ng-critical">
+        <div class="nav-group-header" onclick="toggleNav('critical')" role="button" tabindex="0"
+          aria-expanded="true">
+          <span class="ng-icon">🔴</span>
+          <span class="ng-label">Critical Monitoring</span>
+          <span class="ng-arr">▾</span>
+        </div>
+        <div class="nav-items" id="ngi-critical">
+          <a class="nav-item active" href="#patientGrid" onclick="setView('grid')" id="nav-live-monitor">
+            <span>📊</span> <span>Live ICU Monitor</span>
+          </a>
+          <a class="nav-item" href="#alertCenter" onclick="scrollToAlerts()" id="nav-alerts">
+            <span>🚨</span> <span>Critical Alerts</span>
+            <span class="nav-badge" id="navAlertBadge">0</span>
+          </a>
+          <a class="nav-item" href="#priorityPanel" id="nav-priority">
+            <span>🔥</span> <span>Priority Queue</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- IV OPERATIONS -->
+      <div class="nav-group" id="ng-iv">
+        <div class="nav-group-header" onclick="toggleNav('iv')" role="button" tabindex="0">
+          <span class="ng-icon">💉</span>
+          <span class="ng-label">IV Operations</span>
+          <span class="ng-arr">▾</span>
+        </div>
+        <div class="nav-items collapsed" id="ngi-iv">
+          <a class="nav-item" href="#patientGrid" onclick="setFilter('all',null)" id="nav-iv-levels">
+            <span>💧</span> <span>IV Fluid Levels</span>
+          </a>
+          <a class="nav-item" href="#patientGrid" onclick="setFilter('warning',null)" id="nav-flow-monitor">
+            <span>⚡</span> <span>Flow Rate Monitor</span>
+          </a>
+          <a class="nav-item" href="#patientGrid" id="nav-infusion">
+            <span>📈</span> <span>Infusion Progress</span>
+          </a>
+          <a class="nav-item" href="#patientGrid" id="nav-air">
+            <span>🫧</span> <span>Air Bubble Status</span>
+          </a>
+          <a class="nav-item" href="#patientGrid" id="nav-occlusion">
+            <span>🔧</span> <span>Occlusion Monitor</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- WARD MANAGEMENT -->
+      <div class="nav-group" id="ng-ward">
+        <div class="nav-group-header" onclick="toggleNav('ward')" role="button" tabindex="0">
+          <span class="ng-icon">🏥</span>
+          <span class="ng-label">Ward Management</span>
+          <span class="ng-arr">▾</span>
+        </div>
+        <div class="nav-items collapsed" id="ngi-ward">
+          <a class="nav-item" href="#bedMapSection" id="nav-bedmap">
+            <span>🧭</span> <span>Bed Map</span>
+          </a>
+          <a class="nav-item" href="#patientGrid" id="nav-patient-details">
+            <span>🧑‍⚕️</span> <span>Patient Details</span>
+          </a>
+          <a class="nav-item" href="#" id="nav-nurse-assign">
+            <span>👩‍⚕️</span> <span>Nurse Assignment</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- DEVICE & HARDWARE -->
+      <div class="nav-group" id="ng-device">
+        <div class="nav-group-header" onclick="toggleNav('device')" role="button" tabindex="0">
+          <span class="ng-icon">📡</span>
+          <span class="ng-label">Device & Hardware</span>
+          <span class="ng-arr">▾</span>
+        </div>
+        <div class="nav-items collapsed" id="ngi-device">
+          <a class="nav-item" href="#deviceHealth" id="nav-device-health">
+            <span>📶</span> <span>Device Health</span>
+          </a>
+          <a class="nav-item" href="#deviceHealth" id="nav-battery">
+            <span>🔋</span> <span>Battery Status</span>
+          </a>
+          <a class="nav-item" href="#deviceHealth" id="nav-connectivity">
+            <span>📡</span> <span>Connectivity</span>
+          </a>
+          <a class="nav-item" href="#" id="nav-sensors">
+            <span>🔬</span> <span>Sensor Diagnostics</span>
+          </a>
+          <a class="nav-item" href="#" onclick="openBuzzerPanel()" id="nav-buzzer">
+            <span>🔊</span> <span>Buzzer Control</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- LOGS & REPORTS -->
+      <div class="nav-group" id="ng-logs">
+        <div class="nav-group-header" onclick="toggleNav('logs')" role="button" tabindex="0">
+          <span class="ng-icon">📋</span>
+          <span class="ng-label">Logs & Reports</span>
+          <span class="ng-arr">▾</span>
+        </div>
+        <div class="nav-items collapsed" id="ngi-logs">
+          <a class="nav-item" href="#eventLogSection" id="nav-event-log">
+            <span>🧾</span> <span>Auto Event Log</span>
+          </a>
+          <a class="nav-item" href="#alertCenter" id="nav-alert-history">
+            <span>📜</span> <span>Alert History</span>
+          </a>
+          <a class="nav-item" href="#" onclick="downloadLog()" id="nav-export">
+            <span>⬇</span> <span>Export CSV</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- SYSTEM -->
+      <div class="nav-group" id="ng-system">
+        <div class="nav-group-header" onclick="toggleNav('system')" role="button" tabindex="0">
+          <span class="ng-icon">⚙</span>
+          <span class="ng-label">System</span>
+          <span class="ng-arr">▾</span>
+        </div>
+        <div class="nav-items collapsed" id="ngi-system">
+          <a class="nav-item" href="#" id="nav-user-access">
+            <span>👤</span> <span>User Access</span>
+          </a>
+          <a class="nav-item" href="#" id="nav-firebase-sync">
+            <span>🔥</span> <span>Firebase Sync</span>
+          </a>
+          <a class="nav-item" href="#" id="nav-system-health">
+            <span>💻</span> <span>System Health</span>
+          </a>
+          <a class="nav-item" href="#" id="nav-settings">
+            <span>⚙</span> <span>Settings</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- =================== MAIN CONTENT AREA =================== -->
+    <main class="main-area" id="mainArea" role="main">
+
+      <!-- THREE-COLUMN LAYOUT -->
+      <section class="content-row">
+
+        <!-- ────── LEFT COLUMN ────── -->
+        <div class="left-col">
+
+          <!-- Bed Map Panel -->
+          <div class="panel" id="bedMapSection">
+            <div class="panel-header">
+              <span class="ph-icon">🧭</span>
+              <h2 class="ph-title">Bed Map</h2>
+            </div>
+            <div class="panel-body" style="padding:12px">
+              <div class="bed-map" id="bedMap">
+                <div class="empty-msg" style="grid-column:1/-1">Loading…</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Priority Queue Panel -->
+          <div class="panel" id="priorityPanel">
+            <div class="panel-header">
+              <span class="ph-icon">🔥</span>
+              <h2 class="ph-title">Priority Queue</h2>
+              <span class="ph-badge red" id="pqBadge">0</span>
+            </div>
+            <div class="panel-body">
+              <div class="priority-list" id="priorityList">
+                <div class="empty-msg">All patients stable ✅</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ────── CENTER COLUMN ────── -->
+        <div class="center-col">
+
+          <!-- Toolbar -->
+          <div class="ctoolbar" role="toolbar" aria-label="Patient Filter">
+            <div class="filter-group" role="group" aria-label="Filter by status">
+              <button class="fpill active" id="fp-all" onclick="setFilter('all',this)">All</button>
+              <button class="fpill" id="fp-critical" onclick="setFilter('critical',this)">🔴 Critical</button>
+              <button class="fpill" id="fp-warning" onclick="setFilter('warning',this)">🟡 Warning</button>
+              <button class="fpill" id="fp-normal" onclick="setFilter('normal',this)">🟢 Normal</button>
+              <button class="fpill" id="fp-offline" onclick="setFilter('offline',this)">⚫ Offline</button>
+            </div>
+            <div class="ctoolbar-right">
+              <button class="ctb-btn" id="btn-grid-view" onclick="viewToggle('grid')" title="Grid view">⊞ Grid</button>
+              <button class="ctb-btn" id="btn-list-view" onclick="viewToggle('list')" title="List view">≡ List</button>
+            </div>
+          </div>
+
+          <!-- Patient Grid -->
+          <div class="patient-grid" id="patientGrid" role="region" aria-label="Patient Monitor Grid">
+            <div class="shimmer"></div>
+            <div class="shimmer"></div>
+            <div class="shimmer"></div>
+            <div class="shimmer"></div>
+            <div class="shimmer"></div>
+            <div class="shimmer"></div>
+          </div>
+
+        </div>
+
+        <!-- ────── RIGHT COLUMN ────── -->
+        <div class="right-col">
+
+          <!-- Alert Center -->
+          <div class="panel" id="alertCenter" style="flex:1.2">
+            <div class="panel-header">
+              <span class="ph-icon">🚨</span>
+              <h2 class="ph-title">Alert Center</h2>
+              <span class="ph-badge red" id="alertCenterBadge">0</span>
+              <div class="rp-actions">
+                <button class="rp-act-btn" id="btn-ack-all" onclick="acknowledgeAll()">Ack All</button>
+                <button class="rp-act-btn" id="btn-clear-alerts" onclick="clearAlerts()">Clear</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="alert-list" id="alertList">
+                <div class="empty-msg">✅ No active alerts</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Device Health -->
+          <div class="panel" id="deviceHealth">
+            <div class="panel-header">
+              <span class="ph-icon">📶</span>
+              <h2 class="ph-title">Device Health</h2>
+            </div>
+            <div class="panel-body">
+              <div class="device-health-list" id="deviceHealthList">
+                <div class="empty-msg">No devices</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ── BOTTOM: EVENT LOG ── -->
+      <section class="bottom-section" id="eventLogSection" role="region" aria-label="Event Log">
+        <div class="bb-header">
+          <span style="font-size:15px">🧾</span>
+          <span class="bb-title">Auto Event Log</span>
+          <span class="bb-count" id="logCount">0 events</span>
+          <div class="panel-actions">
+            <button class="rp-act-btn" id="btn-export-log" onclick="downloadLog()">⬇ Export CSV</button>
+            <button class="rp-act-btn" id="btn-clear-log" onclick="clearLog()">🗑 Clear</button>
+          </div>
+        </div>
+        <div class="event-log" id="eventLog">
+          <table class="log-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Bed</th>
+                <th>Severity</th>
+                <th>Event</th>
+              </tr>
+            </thead>
+            <tbody id="logBody">
+              <tr><td colspan="4" class="empty-msg">No events recorded</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODALS
+  ══════════════════════════════════════════════════════════ -->
+
+  <!-- Patient Detail Modal -->
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)" style="display:none"
+    role="dialog" aria-modal="true" aria-label="Patient Detail">
+    <div class="patient-modal" id="patientModal" onclick="event.stopPropagation()">
+      <div class="pm-header">
+        <div class="pm-hl">
+          <div class="pm-bed" id="pmBed">Bed --</div>
+          <div class="pm-name" id="pmName">—</div>
+          <div class="pm-ivtype" id="pmIVType">—</div>
+        </div>
+        <div class="pm-hr">
+          <div class="pm-status-badge" id="pmStatus">—</div>
+          <button class="modal-close" onclick="closePatientModal()" aria-label="Close">✕</button>
+        </div>
+      </div>
+
+      <div class="pm-body">
+        <div class="pm-grid">
+
+          <!-- Fluid Gauge -->
+          <div class="pm-card">
+            <div class="pmc-lbl">Fluid Level</div>
+            <div class="gauge-wrap">
+              <div class="gauge-ring" id="pmGaugeRing">
+                <div class="gauge-inner">
+                  <div class="gauge-pct" id="pmGaugePct">--%</div>
+                  <div class="gauge-sub" id="pmGaugeML">-- mL</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flow Rate -->
+          <div class="pm-card">
+            <div class="pmc-lbl">Flow Rate</div>
+            <div class="pm-big" id="pmFlowRate">-- mL/hr</div>
+            <div class="cmp-bar">
+              <div class="cmp-bg">
+                <div class="cmp-fill" id="pmFlowFill"></div>
+                <div class="cmp-target-line" id="pmTargetLine"></div>
+              </div>
+            </div>
+            <div class="cmp-meta">
+              <span>Target: <b id="pmTargetRate">--</b> mL/hr</span>
+              <span>Δ <b id="pmDelta" style="font-family:var(--font-mono)">--</b></span>
+            </div>
+          </div>
+
+          <!-- Air Bubble -->
+          <div class="pm-card">
+            <div class="pmc-lbl">Air Bubble Sensor</div>
+            <div class="sensor-box" id="pmAirBubble">
+              <span class="sb-icon">💧</span>
+              <span class="sb-txt">Loading…</span>
+            </div>
+          </div>
+
+          <!-- Pressure -->
+          <div class="pm-card">
+            <div class="pmc-lbl">Pressure / Occlusion</div>
+            <div class="pm-big" id="pmPressure">-- mmHg</div>
+            <div class="sensor-box" id="pmOcclusion">
+              <span class="sb-icon">🔵</span><span class="sb-txt">—</span>
+            </div>
+          </div>
+
+          <!-- Battery -->
+          <div class="pm-card">
+            <div class="pmc-lbl">Battery Level</div>
+            <div class="bat-row">
+              <div class="bat-bar-wrap">
+                <div class="bat-fill" id="pmBatFill"></div>
+              </div>
+              <span class="bat-pct" id="pmBatPct">--%</span>
+            </div>
+          </div>
+
+          <!-- Network -->
+          <div class="pm-card">
+            <div class="pmc-lbl">Device / Network</div>
+            <div class="net-rows">
+              <div class="net-row"><span>Status</span><span id="pmOnline">—</span></div>
+              <div class="net-row"><span>Last Update</span><span id="pmLastUpd">—</span></div>
+              <div class="net-row">
+                <span>Device ID</span>
+                <span id="pmDevId" style="font-family:var(--font-mono);font-size:10px">—</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ESP32 Commands -->
+        <div class="pm-commands">
+          <div class="pmc-lbl" style="margin-bottom:12px">⚙ ESP32 Alarm Commands</div>
+          <div class="cmd-row">
+            <button class="cmd-btn c-buzz" id="btn-buzzer-on" onclick="sendCommand('BUZZER_ON')">🔊 Buzzer ON</button>
+            <button class="cmd-btn c-off" id="btn-buzzer-off" onclick="sendCommand('BUZZER_OFF')">🔕 Buzzer OFF</button>
+            <button class="cmd-btn c-ack" id="btn-cmd-ack" onclick="sendCommand('ACK')">✅ Acknowledge</button>
+            <button class="cmd-btn c-esc" id="btn-cmd-esc" onclick="sendCommand('ESCALATE')">⬆ Escalate</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Device Modal -->
+  <div class="modal-overlay" id="addDeviceOverlay" onclick="closeAddModal(event)" style="display:none"
+    role="dialog" aria-modal="true" aria-label="Add New Device">
+    <div class="add-modal" onclick="event.stopPropagation()">
+      <div class="add-modal-header">
+        <span>➕ Register New IV Device</span>
+        <button class="modal-close" onclick="closeAddDevice()" aria-label="Close">✕</button>
+      </div>
+      <div class="add-modal-form">
+        <div class="fg"><label>Device ID</label><input id="ad_id" placeholder="e.g. device_009" /></div>
+        <div class="fg"><label>Bed Number</label><input id="ad_bed" placeholder="e.g. 14" /></div>
+        <div class="fg"><label>Patient Name</label><input id="ad_name" placeholder="Full name" /></div>
+        <div class="fg">
+          <label>IV Type</label>
+          <select id="ad_type">
+            <option>Normal Saline</option>
+            <option>Dextrose 5%</option>
+            <option>Ringer's Lactate</option>
+            <option>Dextrose Saline</option>
+            <option>Blood Transfusion</option>
+            <option>Antibiotic Infusion</option>
+          </select>
+        </div>
+        <div class="fg"><label>Fluid Volume (mL)</label><input id="ad_vol" type="number" value="500" /></div>
+        <div class="fg"><label>Target Flow (mL/hr)</label><input id="ad_flow" type="number" value="100" /></div>
+      </div>
+      <button class="btn-register" id="btn-register-device" onclick="addDevice()">+ Register Device</button>
+    </div>
+  </div>
+
+  <!-- Buzzer Control Panel -->
+  <div class="modal-overlay" id="buzzerOverlay" onclick="closeBuzzerPanel(event)" style="display:none"
+    role="dialog" aria-modal="true" aria-label="Buzzer Control Panel">
+    <div class="buzzer-modal" onclick="event.stopPropagation()">
+      <div class="add-modal-header">
+        <span>🔊 Buzzer Control Panel</span>
+        <button class="modal-close" onclick="closeBuzzerPanel()" aria-label="Close">✕</button>
+      </div>
+      <div class="buzzer-body">
+        <p style="color:var(--text-secondary);font-size:12.5px;margin-bottom:14px">
+          Send commands to individual ESP32 devices via Firebase.
+        </p>
+        <div class="buzzer-grid" id="buzzerGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-stack" id="toastStack" role="region" aria-live="polite" aria-label="Notifications"></div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       FIREBASE + APP LOADER
+  ══════════════════════════════════════════════════════════ -->
+  <script type="module">
+    const firebaseConfig = {
+      apiKey: "AIzaSyDEMO_REPLACE_WITH_YOUR_KEY",
+      authDomain: "smart-iv-monitor.firebaseapp.com",
+      databaseURL: "https://smart-iv-monitor-default-rtdb.firebaseio.com",
+      projectId: "smart-iv-monitor",
+      storageBucket: "smart-iv-monitor.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abcdef123456"
+    };
+
+    function loadScript(src) {
+      return new Promise((res, rej) => {
+        const s = document.createElement("script");
+        s.src = src; s.onload = res; s.onerror = rej;
+        document.body.appendChild(s);
+      });
+    }
+
+    try {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js");
+      const { getDatabase, ref, onValue, set, push, update, serverTimestamp }
+        = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js");
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      window._db = db; window._ref = ref; window._set = set;
+      window._push = push; window._update = update;
+      window._onValue = onValue; window._serverTS = serverTimestamp;
+      window._firebaseReady = true;
+    } catch (e) {
+      console.warn("[SmartIV] Firebase unavailable – demo mode.", e.message);
+      window._firebaseReady = false;
+    }
+
+    await loadScript("app.js");
+    await loadScript("demo-data.js");
+  </script>
+
+</body>
+
+</html>
