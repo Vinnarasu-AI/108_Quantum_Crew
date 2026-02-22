@@ -1,7 +1,7 @@
 // AlertCenter.jsx — Active alert panel with ack/snooze/escalate
 const ICON_MAP = {
     NEAR_EMPTY_CRIT: "🚨", NEAR_EMPTY: "🔴", AIR_BUBBLE: "🫧",
-    OCCLUSION: "🔧", FLOW_ERR: "⚡", OFFLINE: "📡", LOW_BATTERY: "🔋",
+    OCCLUSION: "🔧", FLOW_ERR: "⚡", OFFLINE: "📡", SERVICE_REQ: "🛠️",
     LOADCELL_ERROR: "⚖", HX711_ERROR: "🔌", MCU_ERROR: "💻",
 };
 

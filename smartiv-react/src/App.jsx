@@ -18,13 +18,15 @@ import BuzzerPanel from "./components/BuzzerPanel";
 import PatientModal from "./components/PatientModal";
 import AddDeviceModal from "./components/AddDeviceModal";
 import ExportPanel from "./components/ExportPanel";
+import IVMonitor from "./components/iv-monitor";
+import ESP32LiveData from "./components/esp32/ESP32LiveData";
 
 export default function App() {
   const {
     devices, nurses, alerts, alertHistory, eventLog,
     fbStatus, soundOn, setSoundOn,
     ackAlert, snoozeAlert, escalateAlert, acknowledgeAll,
-    sendBuzzerCommand, addDevice, saveNurse, addEventLog,
+    sendBuzzerCommand, addDevice, deleteDevice, saveNurse, addEventLog,
   } = useFirebaseData();
 
   const { toasts, show: showToast, dismiss } = useToast();
@@ -44,7 +46,7 @@ export default function App() {
   }, [ackAlert, showToast]);
 
   const handleSnooze = useCallback((id) => {
-    snoozeAlert(id); showToast("info", "😴 Snoozed 60s", "Alert will reactivate");
+    snoozeAlert(id); showToast("info", "🔇 Snoozed 5s", "Hardware alarm silenced");
   }, [snoozeAlert, showToast]);
 
   const handleEscalate = useCallback((id, deviceId) => {
@@ -214,6 +216,20 @@ export default function App() {
             </div>
           )}
 
+          {/* ── IV MONITOR (ESP32) view ──────────────────────── */}
+          {view === "ivmonitor" && (
+            <div style={{ padding: "40px", display: "flex", justifyContent: "center" }}>
+              <div style={{ maxWidth: "500px", width: "100%" }}>
+                <IVMonitor deviceId="esp32_001" />
+              </div>
+            </div>
+          )}
+
+          {/* ── ESP32 LIVE DATA view ─────────────────────────── */}
+          {view === "esp32live" && (
+            <ESP32LiveData deviceId="esp32_001" />
+          )}
+
           {/* ── ALERT HISTORY view ────────────────────────────── */}
           {view === "history" && (
             <div style={{ padding: "20px" }}>
@@ -236,6 +252,7 @@ export default function App() {
           device={selectedDevice}
           onClose={() => setSelectedDev(null)}
           onSendCommand={handleSendCommand}
+          onDelete={() => { deleteDevice(selectedDev); setSelectedDev(null); showToast("warn", "🗑 Device Removed", "System updated"); }}
         />
       )}
       {showAddDev && (

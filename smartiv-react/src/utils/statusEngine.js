@@ -16,13 +16,16 @@ export const GROUP_MS = 60_000;
 export function computeStatus(d, isOffline) {
     if (isOffline) return "offline";
     if (hasHardwareError(d)) return "critical";
-    const fp = d.fluid_level ?? d.fluidPercentage ?? 0;
+
+    // Hardware-triggered alert
+    if (d.alert_active === true || d.alarmStatus === "critical") return "critical";
+
+    const fp = d.percentage ?? d.fluid_level ?? d.fluidPercentage ?? 0;
     const fr = d.flow_rate ?? d.flowRate ?? 0;
     const tfr = d.target_flow ?? d.targetFlowRate ?? 100;
     const ab = d.air_bubble ?? d.airBubbleDetected ?? false;
     const pv = d.pressure ?? d.pressureValue ?? 0;
 
-    if (d.alarmStatus === "critical") return "critical";
     if (fp < 5) return "critical";
     if (ab === true) return "critical";
     if (pv > PRESSURE_LIM) return "critical";
@@ -104,7 +107,12 @@ export function computeAlerts(deviceId, d, isOffline) {
         res.push(mk(err.type, err.severity, `Bed ${bed} — ${err.label}: ${err.description}`, "Check hardware connections"));
     });
 
-    const fp = d.fluid_level ?? d.fluidPercentage ?? 0;
+    // Hardware-triggered alert
+    if (d.alert_active === true) {
+        res.push(mk("HARDWARE_ALERT", "critical", `Bed ${bed} — ${pt}: Hardware alarm triggered!`, "Check patient and device immediately"));
+    }
+
+    const fp = d.percentage ?? d.fluid_level ?? d.fluidPercentage ?? 0;
     const fr = d.flow_rate ?? d.flowRate ?? 0;
     const tfr = d.target_flow ?? d.targetFlowRate ?? 100;
     const ab = d.air_bubble ?? d.airBubbleDetected ?? false;
@@ -129,7 +137,7 @@ export function computeAlerts(deviceId, d, isOffline) {
     }
 
     if (bat < 15 && bat > 0)
-        res.push(mk("LOW_BATTERY", "warning", `Bed ${bed} — Battery low (${bat}%)`, "Charge device battery"));
+        res.push(mk("SERVICE_REQ", "warning", `Bed ${bed} — Equipment service req (Low power)`, "Connect device to power source"));
 
     return res;
 }
@@ -142,7 +150,7 @@ export function priorityScore(d) {
     if (d.isOffline) s += 50;
     if (hasHardwareError(d)) s += 220;
     if (d.alarmStatus === "critical") s += 200;
-    const fp = d.fluid_level ?? d.fluidPercentage ?? 100;
+    const fp = d.percentage ?? d.fluid_level ?? d.fluidPercentage ?? 100;
     const bat = d.battery_level ?? d.batteryLevel ?? 100;
     const pv = d.pressure ?? d.pressureValue ?? 0;
     const ab = d.air_bubble ?? d.airBubbleDetected ?? false;
@@ -171,6 +179,14 @@ export function priorityReason(d) {
     const bat = d.battery_level ?? d.batteryLevel ?? 100;
     if (bat < 15) return "Low battery";
     return "Monitoring";
+}
+
+export function equipmentCondition(d) {
+    if (d.isOffline) return { label: "DISCONNECTED", color: "var(--offline)" };
+    const errs = detectHardwareErrors(d);
+    if (errs.length > 0) return { label: "FAULTY", color: "var(--critical)" };
+    if (d.battery_level < 20 || d.batteryLevel < 20) return { label: "SERVICE REQ", color: "var(--warning)" };
+    return { label: "OPTIMAL", color: "var(--normal)" };
 }
 
 export function fmtAgo(sec) {

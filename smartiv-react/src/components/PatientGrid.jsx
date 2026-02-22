@@ -1,6 +1,6 @@
 // PatientGrid.jsx — Main patient card grid with filters
 import { useMemo, useState } from "react";
-import { priorityScore, fmtAgo, FLOW_THR, PRESSURE_LIM } from "../utils/statusEngine";
+import { priorityScore, fmtAgo, FLOW_THR, PRESSURE_LIM, equipmentCondition } from "../utils/statusEngine";
 
 const FILTERS = [
     { key: "all", label: "All" },
@@ -65,17 +65,16 @@ export default function PatientGrid({ devices, searchQuery, onSelectDevice }) {
 }
 
 function PatientCard({ device: d, onClick, listMode }) {
-    const fp = d.fluid_level ?? d.fluidPercentage ?? 0;
+    const fp = d.percentage ?? d.fluid_level ?? d.fluidPercentage ?? 0;
     const fr = d.flow_rate ?? d.flowRate ?? 0;
     const tfr = d.target_flow ?? d.targetFlowRate ?? 100;
-    const bat = d.battery_level ?? d.batteryLevel ?? 0;
-    const ml = d.fluid_ml ?? d.fluidRemainingML ?? 0;
+    const cond = equipmentCondition(d);
+    const ml = d.volume ?? d.fluid_ml ?? d.fluidRemainingML ?? 0;
     const ab = d.air_bubble ?? d.airBubbleDetected ?? false;
     const hw = d.loadcell_error || d.hx711_error || d.mcu_error;
 
     const barCls = fp < 5 ? "crit" : fp < 15 ? "low" : "";
     const flowCls = Math.abs(fr - tfr) > FLOW_THR ? "bad" : "good";
-    const batCls = bat < 20 ? "bad" : bat < 40 ? "warn" : "good";
     const estTime = fr > 0 ? `${Math.floor(ml / fr * 60)} min` : "N/A";
     const ago = fmtAgo(d.secAgo ?? 0);
     const bed = d.bedNumber ?? d.bed_number ?? "?";
@@ -122,7 +121,7 @@ function PatientCard({ device: d, onClick, listMode }) {
             <div className="cm">
                 <div className="cm-cell"><div className="cm-l">Flow</div><div className={`cm-v ${flowCls}`}>{fr}<small style={{ fontSize: "8px", fontWeight: "400" }}> mL/hr</small></div></div>
                 <div className="cm-cell"><div className="cm-l">Target</div><div className="cm-v">{tfr}<small style={{ fontSize: "8px", fontWeight: "400" }}> mL/hr</small></div></div>
-                <div className="cm-cell"><div className="cm-l">Battery</div><div className={`cm-v ${batCls}`}>{bat}%</div></div>
+                <div className="cm-cell"><div className="cm-l">Condition</div><div className="cm-v" style={{ color: cond.color }}>{cond.label}</div></div>
                 <div className="cm-cell"><div className="cm-l">Est. Left</div><div className="cm-v" style={{ fontSize: "11px" }}>{estTime}</div></div>
             </div>
 

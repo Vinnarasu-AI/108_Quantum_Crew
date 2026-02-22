@@ -5,28 +5,27 @@ import { priorityScore, priorityReason } from "../utils/statusEngine";
 const MEDALS = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"];
 
 export default function PriorityQueue({ devices, onSelectDevice }) {
-    const ranked = useMemo(() => (
-        Object.values(devices)
-            .map(d => ({ d, score: priorityScore(d) }))
-            .filter(x => x.score > 0)
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 10)
-    ), [devices]);
+    const devs = useMemo(() => {
+        return Object.values(devices)
+            .filter(d => d.status === "critical" || d.status === "warning")
+            .sort((a, b) => priorityScore(b) - priorityScore(a));
+    }, [devices]);
 
     return (
         <div className="panel" id="priorityPanel">
             <div className="panel-header">
                 <span className="ph-icon">🔥</span>
                 <h2 className="ph-title">Priority Queue</h2>
-                <span className="ph-badge red">{ranked.length}</span>
+                <span className="ph-badge red">{devs.length}</span>
             </div>
             <div className="panel-body">
                 <div className="priority-list">
-                    {ranked.length === 0
+                    {devs.length === 0
                         ? <div className="empty-msg">All patients stable ✅</div>
-                        : ranked.map(({ d }, i) => {
+                        : devs.map((d, i) => {
                             const sev = d.status === "critical" ? "crit" : "warn";
                             const bed = d.bedNumber ?? d.bed_number ?? "?";
+                            const fp = d.percentage ?? d.fluid_level ?? d.fluidPercentage ?? 0;
                             const name = (d.patientName ?? d.patient_name ?? "Unknown").split(" ")[0];
                             return (
                                 <div

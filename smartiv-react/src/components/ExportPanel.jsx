@@ -9,7 +9,7 @@ export default function ExportPanel({ devices, alertHistory, eventLog }) {
     const cards = [
         {
             icon: "📊", title: "Device Data Export",
-            description: `Export live monitoring data for all ${devCount} device(s). Includes fluid level, flow rate, weight, battery, hardware error flags, and timestamps.`,
+            description: `Export live monitoring data for all ${devCount} device(s). Includes fluid level, flow rate, weight, equipment condition, hardware error flags, and timestamps.`,
             count: devCount, unit: "devices",
             action: () => exportDeviceData(devices),
             btnLabel: "⬇ Export Device Data",

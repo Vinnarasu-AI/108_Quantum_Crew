@@ -14,6 +14,7 @@ const NAV_GROUPS = [
         id: "iv", icon: "💉", label: "IV Operations",
         items: [
             { id: "fluid", icon: "💧", label: "IV Fluid Levels", view: "monitor" },
+            { id: "esp32", icon: "📟", label: "ESP32 Monitor", view: "ivmonitor" },
             { id: "flow", icon: "⚡", label: "Flow Rate Monitor", view: "monitor" },
         ],
     },
@@ -28,8 +29,8 @@ const NAV_GROUPS = [
     {
         id: "device", icon: "📡", label: "Device & Hardware",
         items: [
+            { id: "esp32live", icon: "📡", label: "ESP32 Live Data", view: "esp32live" },
             { id: "devhealth", icon: "📶", label: "Device Health", view: "devhealth" },
-            { id: "battery", icon: "🔋", label: "Battery Status", view: "devhealth" },
             { id: "buzzer", icon: "🔊", label: "Buzzer Control", view: "buzzer" },
         ],
     },

@@ -25,7 +25,7 @@ export default function Header({ devices, alerts, fbStatus, soundOn, onToggleSou
         return () => clearInterval(iv);
     }, []);
 
-    const fbLabel = fbStatus === "live" ? "Firebase Live" : fbStatus === "demo" ? "Demo Mode" : "Connecting…";
+    const fbLabel = fbStatus === "live" ? "Cloud Sync Active" : "Connecting…";
 
     return (
         <header className="topbar" role="banner">

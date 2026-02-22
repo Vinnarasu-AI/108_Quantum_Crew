@@ -54,13 +54,15 @@ export default function AlertHistory({ alertHistory }) {
                                 <th>Patient</th>
                                 <th>Type</th>
                                 <th>Severity</th>
+                                <th>Action By</th>
+                                <th>Action Taken</th>
                                 <th>Message</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filtered.length === 0
-                                ? <tr><td colSpan={7} className="empty-msg" style={{ textAlign: "center", padding: "24px" }}>No alert history found</td></tr>
+                                ? <tr><td colSpan={9} className="empty-msg" style={{ textAlign: "center", padding: "24px" }}>No alert history found</td></tr>
                                 : filtered.map((a, i) => {
                                     const sc = a.severity === "critical" ? "sv-critical" : a.severity === "warning" ? "sv-warning" : "sv-ok";
                                     return (
@@ -70,7 +72,9 @@ export default function AlertHistory({ alertHistory }) {
                                             <td style={{ fontSize: "11px" }}>{a.patient ?? "—"}</td>
                                             <td style={{ fontSize: "10px", color: "var(--text-secondary)" }}>{(a.type ?? "").replace(/_/g, " ")}</td>
                                             <td><span className={`ll-sev-badge ${sc}`}>{a.severity ?? "—"}</span></td>
-                                            <td style={{ fontSize: "11px", color: "var(--text-secondary)", maxWidth: "240px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.message ?? "—"}</td>
+                                            <td style={{ fontSize: "11px" }}>{a.action_by ?? "—"}</td>
+                                            <td style={{ fontSize: "11px" }}>{a.action_taken ?? "—"}</td>
+                                            <td style={{ fontSize: "11px", color: "var(--text-secondary)", maxWidth: "200px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.message ?? "—"}</td>
                                             <td>
                                                 <span style={{
                                                     padding: "2px 7px", borderRadius: "4px", fontSize: "9.5px", fontWeight: 700,

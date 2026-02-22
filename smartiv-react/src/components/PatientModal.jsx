@@ -1,13 +1,13 @@
 // PatientModal.jsx — Patient detail drawer/modal
-import { FLOW_THR, PRESSURE_LIM, detectHardwareErrors, fmtAgo } from "../utils/statusEngine";
+import { FLOW_THR, PRESSURE_LIM, detectHardwareErrors, fmtAgo, equipmentCondition } from "../utils/statusEngine";
 
-export default function PatientModal({ device: d, onClose, onSendCommand }) {
+export default function PatientModal({ device: d, onClose, onSendCommand, onDelete }) {
     if (!d) return null;
 
-    const fp = d.fluid_level ?? d.fluidPercentage ?? 0;
+    const fp = d.percentage ?? d.fluid_level ?? d.fluidPercentage ?? 0;
     const fr = d.flow_rate ?? d.flowRate ?? 0;
     const tfr = d.target_flow ?? d.targetFlowRate ?? 100;
-    const bat = d.battery_level ?? d.batteryLevel ?? 0;
+    const cond = equipmentCondition(d);
     const pv = d.pressure ?? d.pressureValue ?? 0;
     const ab = d.air_bubble ?? d.airBubbleDetected ?? false;
     const ml = d.fluid_ml ?? d.fluidRemainingML ?? 0;
@@ -16,8 +16,7 @@ export default function PatientModal({ device: d, onClose, onSendCommand }) {
     const ivT = d.ivType ?? d.iv_type ?? "IV Fluid";
     const ago = fmtAgo(d.secAgo ?? 0);
 
-    const delta = fr - tfr;
-    const bCol = bat < 20 ? "var(--critical)" : bat < 40 ? "var(--warning)" : "var(--normal)";
+    const bCol = (d.battery_level ?? d.batteryLevel ?? 100) < 20 ? "var(--critical)" : "var(--primary)";
     const fCol = Math.abs(delta) > FLOW_THR ? "var(--critical)" : "var(--primary)";
     const fpCol = fp < 10 ? "var(--critical)" : fp < 25 ? "var(--warning)" : "var(--primary)";
     const hwErrs = detectHardwareErrors(d);
@@ -39,7 +38,9 @@ export default function PatientModal({ device: d, onClose, onSendCommand }) {
                         <span className="pm-bed" id="pmBed">Bed {bed}</span>
                         <span style={{ margin: "0 8px", color: "var(--text-muted)" }}>·</span>
                         <span className="pm-name" id="pmName">{name}</span>
-                        <span style={{ marginLeft: "8px", fontSize: "11px", color: "var(--text-secondary)" }}>{ivT}</span>
+                        <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "2px" }}>
+                            {gender} · {age} yrs · {dx}
+                        </div>
                     </div>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                         <span style={{ ...stStyles[d.status], padding: "2px 10px", borderRadius: "6px", fontSize: "10.5px", fontWeight: 700 }}>
@@ -117,10 +118,10 @@ export default function PatientModal({ device: d, onClose, onSendCommand }) {
                         </div>
                     </div>
 
-                    {/* Hardware sensors */}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))", gap: "8px" }}>
                         <InfoRow label="Weight" value={d.weight != null ? `${Number(d.weight).toFixed(1)}g` : "N/A"} />
-                        <InfoRow label="Battery" value={`${bat}%`} color={bCol} />
+                        <InfoRow label="Condition" value={cond.label} color={cond.color} />
+                        <InfoRow label="Battery" value={`${d.battery_level ?? d.batteryLevel ?? 0}%`} color={bCol} />
                         <InfoRow label="WiFi RSSI" value={d.wifi_rssi ? `${d.wifi_rssi} dBm` : "N/A"} />
                         <InfoRow label="Uptime" value={d.uptime_sec ? `${Math.floor(d.uptime_sec / 60)}m` : "N/A"} />
                         <InfoRow label="Connectivity" value={d.isOffline ? "OFFLINE" : "Online"} color={d.isOffline ? "var(--critical)" : "var(--normal)"} />
@@ -152,6 +153,16 @@ export default function PatientModal({ device: d, onClose, onSendCommand }) {
                                 </button>
                             ))}
                         </div>
+                    </div>
+
+                    <div style={{ borderTop: "1px solid var(--border-light)", paddingTop: "16px", marginTop: "8px" }}>
+                        <button
+                            className="al-btn"
+                            onClick={() => window.confirm("Delete this device from the ward?") && onDelete()}
+                            style={{ background: "var(--critical-bg)", color: "var(--critical)", borderColor: "var(--critical-border)", width: "100%", fontWeight: 700 }}
+                        >
+                            🗑 Discharge Patient / Delete Device
+                        </button>
                     </div>
                 </div>
             </div>

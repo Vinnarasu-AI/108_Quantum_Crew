@@ -1,6 +1,6 @@
 // DeviceHealth.jsx — Hardware health panel with Loadcell / HX711 / MCU errors
 import { useMemo } from "react";
-import { detectHardwareErrors, fmtAgo } from "../utils/statusEngine";
+import { detectHardwareErrors, fmtAgo, equipmentCondition } from "../utils/statusEngine";
 
 export default function DeviceHealth({ devices }) {
     const devs = useMemo(() => Object.values(devices), [devices]);
@@ -23,11 +23,11 @@ export default function DeviceHealth({ devices }) {
 }
 
 function DeviceHealthCard({ device: d }) {
-    const bat = d.battery_level ?? d.batteryLevel ?? 0;
+    const cond = equipmentCondition(d);
     const errors = detectHardwareErrors(d);
-    const bCol = bat < 20 ? "var(--critical)" : bat < 40 ? "var(--warning)" : "var(--normal)";
-    const dotCol = errors.length > 0 ? "var(--critical)" : d.isOffline ? "var(--warning)" : "var(--normal)";
+    const bat = d.battery_level ?? d.batteryLevel ?? 0;
     const batPct = Math.min(100, Math.max(0, bat));
+    const dotCol = errors.length > 0 ? "var(--critical)" : d.isOffline ? "var(--warning)" : "var(--normal)";
     const bed = d.bedNumber ?? d.bed_number ?? "?";
     const name = (d.patientName ?? d.patient_name ?? "Unknown").split(" ")[0];
     const ago = fmtAgo(d.secAgo ?? 0);
@@ -65,12 +65,13 @@ function DeviceHealthCard({ device: d }) {
                         {d.weight != null && <span style={{ marginLeft: "10px" }}>⚖ {Number(d.weight).toFixed(1)}g</span>}
                     </div>
 
-                    {/* Battery */}
+                    {/* Condition & Battery */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "6px" }}>
-                        <span className="dh-bat" style={{ color: bCol }}>{bat}% 🔋</span>
-                        <div className="dh-bat-bar" style={{ flex: 1, marginLeft: "8px" }}>
-                            <div className="dh-bat-fill" style={{ width: `${batPct}%`, background: bCol }}></div>
-                        </div>
+                        <span style={{ fontSize: "11px", fontWeight: 700, color: cond.color }}>{cond.label}</span>
+                        <span className="dh-bat" style={{ color: bat < 20 ? "var(--critical)" : "var(--text-secondary)" }}>{bat}% 🔋</span>
+                    </div>
+                    <div className="dh-bat-bar" style={{ height: "4px", marginTop: "4px" }}>
+                        <div className="dh-bat-fill" style={{ width: `${batPct}%`, background: bat < 20 ? "var(--critical)" : "var(--primary)" }}></div>
                     </div>
 
                     {/* Connectivity */}

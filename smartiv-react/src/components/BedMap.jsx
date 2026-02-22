@@ -4,7 +4,7 @@ import { useMemo } from "react";
 const STATUS_ICON = { normal: "🟢", warning: "🟡", critical: "🔴", offline: "⚫" };
 
 export default function BedMap({ devices, onSelectDevice }) {
-    const devs = useMemo(() => Object.values(devices), [devices]);
+    const devs = Object.values(devices);
 
     return (
         <div className="panel" id="bedMapSection">
@@ -19,7 +19,7 @@ export default function BedMap({ devices, onSelectDevice }) {
                     : <div className="bed-map">
                         {devs.map(d => (
                             <div
-                                key={d.deviceId}
+                                key={d.deviceId || d.bedNumber || d.bed_number}
                                 className={`bm-cell ${d.status}`}
                                 onClick={() => onSelectDevice(d.deviceId)}
                                 role="button" tabIndex={0}
